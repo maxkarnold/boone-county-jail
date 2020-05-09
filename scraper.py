@@ -1,4 +1,4 @@
-
+# ALL THE MODULES ARE HERE
 import requests
 import requests_cache
 from bs4 import BeautifulSoup
@@ -6,6 +6,7 @@ from datetime import timedelta
 from time import sleep
 from peewee import DoesNotExist
 from urllib.parse import parse_qs, urlparse
+
 
 requests_cache.install_cache(
     'cache',
@@ -15,6 +16,9 @@ requests_cache.install_cache(
 
 url = 'https://report.boonecountymo.org/mrcjava/servlet/RMS01_MP.R00040s?run=2&R001=&R002=&ID=3641&hover_redir=&width=950'
 # query_str = urlparse(url).query 
+# id = parse_qs(query_str)['ID'][0].strip(),
+
+#FUNCTIONS BELOW
 
 def get_detainee_details():
 
@@ -27,10 +31,7 @@ def get_detainee_details():
     return detainee_data
 
 
-
-
-# id = parse_qs(query_str)['ID'][0].strip(),
-
+#MAIN FUNCTION BELOW
 def main():
     print('Printing main function...')
     print(get_detainee_details())
