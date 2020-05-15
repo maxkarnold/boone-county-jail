@@ -9,7 +9,7 @@ Steps to running the web scraper:
 1. Download/clone the repository
 2. Delete the boone_county_jail.db
 2. Go to the directory in your terminal/cmd line
-3. pip install all of the necessary modules in your directory
+3. pip install all of the necessary modules in your directory (not necessary to include any of the Jupyter modules)
 4. Run the scraper.py (command is <i>python scraper.py</i>)
 5. Should run correctly and say <i>FINALLY DONE SCRAPING!!!</i>
 6. The boone_county_jail.db should be updated and in your directory
