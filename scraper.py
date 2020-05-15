@@ -5,7 +5,6 @@ from bs4 import BeautifulSoup
 from datetime import timedelta
 from time import sleep
 from peewee import DoesNotExist
-from urllib.parse import parse_qs, urlparse
 from models import Detainee_Info, Detainee_Charges
 
 requests_cache.install_cache(
@@ -15,134 +14,134 @@ requests_cache.install_cache(
 )
 
 url = 'https://report.boonecountymo.org/mrcjava/servlet/RMS01_MP.R00040s?run=2&R001=&R002=&ID=3641&hover_redir=&width=950'
-# query_str = urlparse(url).query 
-# id = parse_qs(query_str)['ID'][0].strip(),
 
-# url = soup.select("div#content > div",recursive=False)
-#
-# for tag in url:
-#     div_ID = tag.get('id')
-#     ids = div_ID.lstrip('mugshot')
-#     print(ids)
+
+r = requests.get(url, headers ={
+'user-agent': "I'm good people!!!"})
+
+soup = BeautifulSoup(r.content, 'lxml')
 
 #FUNCTIONS BELOW
 
-def get_main_url():
-    r = requests.get(url, headers ={
-    'user-agent': "I'm good people!!!"})
+def get_detainee_divs(soup):
 
-    r.raise_for_status()
-    return r.content
+    details_page = soup.find(id='content')
+    mugshot_divs = details_page.find_all('div', class_='mugshotDiv')
+    
+    return mugshot_divs
 
-def extract_detainee_containers(main_url):
-    soup = BeautifulSoup(main_url, 'lxml')
+def extract_id(div):
 
-    detainee_names = set()
+    mugshot_id = div.attrs['id'].lstrip('mugshot')
 
-    detainee_tables = soup.find_all('div',class_='mugshotDiv')
+    return mugshot_id
 
-    for detainee in detainee_tables:
-        detainee_name_cell = detainee.find('div',class_='inmateName')
-        detainee_name = detainee_name_cell.text.strip()
-        detainee_names.add(detainee_name)
-    return detainee_names
+def extract_name(div):
+    
+    name_div = div.find('div',class_='inmateName')
+    name = name_div.text.strip()
 
-def get_detainee_container(detainee_name, detainee_names):
-    soup = BeautifulSoup('main_url', 'lxml')
+    return name
 
+def extract_case_num_tds(div):
 
-    # detainee_tables = soup.find_all('div',class_='mugshotDiv')
-    # detainee_name_cell = detainee.find('div', class_='inmateName')
-    # detaineee_name = detainee_name_cell.text.strip()
+    case_num_tds= div.find_all('td', attrs={"data-th": "Case #"})
 
-    for detainee_name in detainee_names:
-        print(detainee_name)
-        print(type(detainee_name))
-        print(type(detainee_names))
-        detainee_name_cell = soup.find(detainee_name)
-        print(detainee_name_cell)
-        detainee = detainee_name_cell.find_parent('div', class_='mugshotDiv')
-    return detainee
+    return case_num_tds
+    
+def create_info_table(div):
 
-def extract_detainee_details(detainee_tables,detainee_names):
+    mugshot_id = div.attrs['id'].lstrip('mugshot')
+    name_div = div.find('div', class_='inmateName')
+    name = name_div.text.strip()
 
-    detainee_name_cell = detainee.find('div',class_='inmateName')
-    detainee_info_tables = detainee.find('div', class_='infoContainer')
-    detainee_info_cells = detainee_info_tables.find_all(
-        'td',class_='two td_left'
-    )
+    info_div = div.find('div', class_='infoContainer')
+    trs = info_div.find_all('tr')
+    
+    data = {'height': "N/A", 'weight': "N/A", 'sex': "N/A",
+            'eyes': "N/A", 'hair': "N/A", 'race': "N/A", 
+            'age': "N/A", 'city': "N/A", 'state': "N/A", }
+
+    for tr in trs:
+        tds = tr.find_all('td')
+        key = tds[0].text.lower().strip()
+        value = tds[1].text.strip()
+        data[key] = value
 
     Detainee_Info.create(
-        name= detainee_name_cell.text.strip(),
-        height=detainee_info_cells[0].text.strip(),
-        weight=detainee_info_cells[1].text.strip(),
-        sex=detainee_info_cells[2].text.strip(),
-        eyes=detainee_info_cells[3].text.strip(),
-        hair=detainee_info_cells[4].text.strip(),
-        race=detainee_info_cells[5].text.strip(),
-        age=detainee_info_cells[6].text.strip(),
-        city=detainee_info_cells[7].text.strip(),
-        state=detainee_info_cells[8].text.strip(),
+        detainee_id = mugshot_id,
+        name = name,
+        height = data['height'],
+        weight = data['weight'],
+        sex = data['sex'],
+        eyes = data['eyes'],
+        hair = data['hair'],
+        race = data['race'],
+        age = data['age'],
+        city = data['city'],
+        state = data['state'],
     )
 
-def extract_detainee_charges(detainee_tables, detainee_names):
+def create_charge_table(case_num_td,div):
 
-    detainee_name_cell = detainee.find('div',class_='inmateName')
-    detainee_info_tables = detainee.find('div', class_='chargesContainer')
-    detainee_charge_row = detainee_info_tables.find('tr')
-    detainee_charge_cells = detainee_charge_row.find_all(
-        'td',class_='two td_left'
-    )
+    mugshot_id = div.attrs['id'].lstrip('mugshot')
+    name_div = div.find('div', class_='inmateName')
+    name = name_div.text.strip()
+
+    tr = case_num_td.find_parent('tr')
+
+    data = {}
+
+    for td in tr.find_all('td'):
+        key = td.attrs['data-th'].lower().strip()
+        value = td.text.strip()
+        data[key] = value
 
     Detainee_Charges.create(
-        name=detainee_name_cell.text.strip(),
-        case_num=detainee_charge_cells[0].text.strip(),
-        charge_description=detainee_charge_cells[1].text.strip(),
-        charge_status=detainee_charge_cells[2].text.strip(),
-        bail_amount=detainee_charge_cells[3].text.strip(),
-        bond_type=detainee_charge_cells[4].text.strip(),
-        court_date=detainee_charge_cells[5].text.strip(),
-        court_time=detainee_charge_cells[6].text.strip(),
-        court_jur=detainee_charge_cells[7].text.strip(),
+        detainee_id=mugshot_id,
+        name=name,
+        case_num=data['case #'],
+        charge_description=data['charge description'],
+        charge_status=data['charge status'],
+        bail_amount=data['bail amount'],
+        bond_type=data['bond type'],
+        court_date=data['court date'],
+        court_time=data['court time'],
+        court_of_jurisdiction=data['court of jurisdiction'],
     )
 
 
 #MAIN FUNCTION BELOW
 def main():
     print('executing scraper')
-    main_url = get_main_url()
-    detainee_names = extract_detainee_containers(main_url)
+    mugshot_divs = get_detainee_divs(soup)
 
-    for detainee_name in detainee_names:
-        print('checking for %s' % detainee_name)
+    for div in mugshot_divs:
+        mugshot_id = extract_id(div)
+        name = extract_name(div)
+        case_num_tds = extract_case_num_tds(div)
+
+        print('checking %s info' % name)
         try:
-            Detainee_Info.get(name=detainee_name)
+            Detainee_Info.get(detainee_id=mugshot_id)
         except DoesNotExist:
-            print('extracting detainee info for %s' % detainee_name)
-            detainee = get_detainee_container(detainee_name, detainee_names)
-            extract_detainee_details(detainee)
+            create_info_table(div)
+            print('adding %s info' % name)
             print('done')
-            sleep(0.5)
         else:
-             print('%s or %s already exists' % detainee_name, case_num)
-    #     print('checking for %s' % case_num)
-    #     try:
-    #         Detainee_Charges.get(case_num=case_num)
-    #     except DoesNotExist:
-    #         print('extracting detainee charges for %s' % detainee_name)
-    #         extract_detainee_charges(case_num)
-    #         print('done')
-    #         sleep(0.5)
-    #     else:
-    #         print('%s or %s already exists' % detainee_name, case_num)
-    #
-    #     sleep(1.5)
+            print('%s already exists' % name)
+
+        print("checking %s's charges" % name)
+        for case_num_td in case_num_tds:
+            case_num = case_num_td.text.lower().strip()
+            try:
+                create_charge_table(case_num_td, div)
+                print('adding Case# %s' % case_num)
+            except DoesNotExist:
+                print('%s already exists' % case_num)
+        print("finished with detainee %s" % name)
+        sleep(1.5)
+    print('FINALLY DONE SCRAPING!!!')
 
 if __name__=='__main__':
     main()
-
-#NOTES
-
-#Haven't taken into account there could be multiple detainees with the same case number
-#There could be problems with how the tables are named
-#Could be problems with....

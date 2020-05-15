@@ -1,14 +1,15 @@
 import peewee
 
 db = peewee.SqliteDatabase(
-    'detainee_info.db',
+    'boone_county_jail.db',
     pragmas={'foreign_keys': 1}
 )
 
 
 
 class Detainee_Info(peewee.Model):
-    name = peewee.CharField(primary_key=True)
+    detainee_id = peewee.IntegerField(primary_key=True)
+    name = peewee.CharField()
     height = peewee.CharField()
     weight = peewee.FloatField()
     sex = peewee.CharField()
@@ -23,19 +24,16 @@ class Detainee_Info(peewee.Model):
         database = db
 
 class Detainee_Charges(peewee.Model):
-    name = peewee.ForeignKeyField(
-        Detainee_Info,
-        backref='charges',
-        column_name='name',
-    )
-    case_num = peewee.CharField(primary_key=True)
+    detainee_id = peewee.IntegerField()
+    name = peewee.CharField()
+    case_num = peewee.CharField()
     charge_description = peewee.CharField()
-    charge_status = peewee.CharField()
+    charge_status = peewee.CharField(null=True)
     bail_amount = peewee.CharField()
     bond_type = peewee.CharField()
     court_date = peewee.DateField()
     court_time = peewee.TimeField()
-    court_jur = peewee.CharField()
+    court_of_jurisdiction = peewee.CharField()
 
     class Meta:
         database = db
