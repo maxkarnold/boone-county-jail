@@ -1,7 +1,7 @@
 # boone-county-jail
 class web scraper for boone-county-jail detainee information
 
-This web scraper extracts all of the detainees from the boone county jail <a href='https://report.boonecountymo.org/mrcjava/servlet/RMS01_MP.I00030s'>website</a> and puts them into a SQL database. 
+This web scraper extracts all of the detainees from the boone county jail <a href='https://report.boonecountymo.org/mrcjava/servlet/RMS01_MP.I00030s' target='blank_'>website</a> and puts them into a SQL database. 
 This includes basic info and all of the charges against them.
 
 Steps to running the web scraper:
