@@ -28,7 +28,7 @@ class Detainee_Charges(peewee.Model):
     name = peewee.CharField()
     case_num = peewee.CharField()
     charge_description = peewee.CharField()
-    charge_status = peewee.CharField(null=True)
+    charge_status = peewee.CharField()
     bail_amount = peewee.CharField()
     bond_type = peewee.CharField()
     court_date = peewee.DateField()
